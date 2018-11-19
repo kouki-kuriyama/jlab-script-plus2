@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+	<meta charset="UTF-8">
+	<title><!--##UploaderTitle##--></title>
+	<!--##MetaDescription##-->
+	
+	<!-- StyleSheet -->
+	<link rel="stylesheet" type="text/css" href="./static/css/style.css">
+	
+	<!-- Javascript -->
+	<script type="text/javascript" src="./master.js?MasterJSUpdateTime"></script>
+	<script type="text/javascript" src="./static/js/uploader.js"></script>
+	<script type="text/javascript" src="./static/js/data-control.js"></script>
+	<script type="text/javascript" src="./static/js/user-control.js"></script>
+	<script type="text/javascript">
+		
+		//ユーザー設定の読み込み
+		LoadUserSetting();
+		
+		//Ajax定義
+		var xmlRequest = new XMLHttpRequest();
+		
+		//各変数の初期化
+		var UploaderStatus = { URLBox:false, OpenTab:"ImageList", DragDrop:false, Processing:false, Ready:false, UploadedPath:[] };
+		var RawBinaryImages = { Files:[], Counts:0, Analyzing:0 };
+		var BinaryImages = { Files:[], Base64:[], MIMEType:[], Counts:0, BoxID:0, PreviewIDs:[] };
+		
+		//設定タブの表示変更
+		window.onload = function(){
+		
+			//削除キーの設定
+			if( UserSettings.DeleteKey != "" ){
+				document.getElementById("DeleteKey").value = UserSettings.DeleteKey;
+			}
+		
+			//マスターのFastUpload設定確認
+			if( !MasterSettings.FastUpload ){
+				document.getElementById("SetFastUpload").options[1].disabled = true;
+			}
+			
+			//Stream読み込み
+			LoadStream(1, false);
+			
+			return;
+		}
+	
+	</script>
+	
+	
+</head>
+<body id="ContentsTop" ondragover="onFileOver(event)" ondrop="onFileDrop(event)">
+
+	<!-- Header -->
+	<header>
+		<h1><!--##UploaderTitle##--></h1>
+	</header>
+
+	<!-- UploaderPanel -->
+	<div id="UploaderMessageArea">アップロードする画像を<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください</div>
+	<div id="Uploader">
+		<div id="UploaderControl">
+			<span id="PreviewAreaMessage" style="font-size:12px; color:#bbb">
+			画像は選択されていません<br>
+			1枚<!--##LimitSize##-->MBまでのJPG, GIF, PNG形式に対応 | 同時アップロード<!--##LimitCount##-->枚まで<br>
+			URL: <!--##ImageURL##--><!--##FileBaseName##-->+number.ext | 画像保存期間: <!--##SaveDays##-->日間 | Admin: <!--##Admin##-->
+			</span>
+			<div id="PreviewAreaBox">
+				<div id="PreviewAreaCover" style="display:none"></div>
+				<div id="PreviewArea" style="display:none"></div>
+			</div>
+			<div id="UploaderControlPanel">
+				<div id="UploaderSelectPanel" style="margin-top:2em">
+					<input type="file" id="SelectFiles" onchange="onFileDialog()" style="display:none" multiple>
+					<input type="button" class="PositiveBT" onclick="OpenFileDialog()" value="選択…" style="width:90px !important">
+					<input type="password" id="DeleteKey" class="DefaultTB" style="width:200px; text-align:center">
+				</div>
+				<div id="UploaderStartPanel" style="margin-top:0.5em; display:none">
+					<input type="button" class="PositiveBT" value="アップロード" onclick="StartUpload()">
+					<input type="button" class="DefaultBT" value="キャンセル" onclick="ClearUploader(true)">
+				</div>
+				<div id="UploaderFinishPanel" style="margin-top:0.5em; display:none">
+					<textarea id="UploadedURLBox" onclick="this.select(0,this.value.length)" class="DefaultTB" readonly>ここにアップロードした画像のURLが表示されます</textarea>
+					<div id="UploaderFinishButton" style="display:none">
+						<input type="button" class="PositiveBT" value="完了" onclick="ClearUploader(); LoadStream(1,false)">
+						<input type="button" class="PositiveBT" value="URLBoxに追加" onclick="NewerAddURLBox(UploaderStatus.UploadedPath, 'Add'); ClearUploader(); LoadStream(1,false)">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- CustomList -->
+	<!--##CustomHTML1##-->
+	
+	<!-- Tabs -->
+	<ul id="ListTabs">
+		<li onclick="ToggleTab('ImageList'); LoadStream(1,false)">Stream</li>
+		<li onclick="ToggleTab('History'); LoadHistory(1)">履歴</li>
+		<li onclick="ToggleTab('Settings'); LoadSettingsTab()">設定</li>
+	</ul>
+	
+	<!-- TabContents -->
+	<div id="TabBox">
+	
+		<!-- ImageList -->
+		<div id="Tab-ImageList" style="display:block">
+			<div id="ImageListMessage"><noscript><strong>Javascriptを有効にしてください</strong></noscript></div>
+			<ul id="ImageList" style="display:none"></ul>
+			<ul id="ImageListTable" style="display:none"></ul>
+		</div>
+		
+		<!-- History -->
+		<div id="Tab-History" style="display:none">
+			<div id="HistoryImageListMessage"></div>
+			<ul id="HistoryImageList" style="display:none"></ul>
+			<ul id="HistoryImageListTable" style="display:none"></ul>
+		</div>
+		
+		<!-- Settings -->
+		<div id="Tab-Settings" style="display:none">
+		<ul id="SettingList">
+			<li>
+				<div>ライトモード</div>
+				<div>
+				<select id="SetLightMode" class="SettingDDMenu" data-sen="LightMode" onchange="SaveUserSetting(this)">
+					<option value="Disable">無効</option>
+					<option value="Enable">有効</option>
+				</select>
+				</div>
+			</li>
+			<li>ライトモードを有効にするとStreamを自動で読み込まなくなり、ナローな環境ではページの実行速度が速くなります。</li>
+			
+			<li>
+				<div>FastUpload</div>
+				<div>
+				<select id="SetFastUpload" class="SettingDDMenu" data-sen="FastUpload" onchange="SaveUserSetting(this)">
+					<option value="Disable">無効</option>
+					<option value="Enable">有効</option>
+				</select>
+				</div>
+			</li>
+			<li>
+				FastUploadを有効にすると画像取り込み終了時に確認画面をスキップして自動的に画像をアップロードを開始します。<br>
+				FastUploadを使用するには削除キーを設定する必要があります。<br>
+				（管理者によりFastUploadが許可されていない場合は変更できません）
+			</li>
+			
+			<li>
+				<div>履歴の保存</div>
+				<div>
+				<select id="SetHistory" class="SettingDDMenu" data-sen="History" onchange="SaveUserSetting(this)">
+					<option value="Disable">無効</option>
+					<option value="Enable" selected>有効</option>
+				</select>
+				</div>
+			</li>
+			<li>履歴の保存を有効にすると、ブラウザにアップロードした画像の履歴を保存します。</li>
+			
+			<li>
+				<div>Stream/履歴表示枚数</div>
+				<div>
+				<select id="SetDisplayCount" class="SettingDDMenu" data-sen="DisplayCount" onchange="SaveUserSetting(this)">
+					<option value="10">10</option>
+					<option value="20" selected>20</option>
+					<option value="30">30</option>
+					<option value="40">40</option>
+					<option value="50">50</option>
+				</select>
+				</div>
+			</li>
+			<li>Stream/履歴1ページに表示する画像の枚数を設定します。</li>
+			
+			<li>
+				<div>アップロード履歴を整理</div>
+				<div><input type="button" class="PositiveBT" value="整理する" onclick="CleanUpUserData()"></div>
+			</li>
+			<li>期限切れになって削除された画像をアップロード履歴から削除して整理します。</li>
+			</li>
+			
+			<li>
+				<div>アップロード履歴を削除</div>
+				<div><input type="button" class="NegativeBT" value="すべて削除" onclick="InitializeUserData()"></div>
+			</li>
+			<li>アップロード履歴を削除します。削除後の復元はできません。</li>
+			
+			<li>
+				<div>すべての設定を初期化</div>
+				<div><input type="button" class="NegativeBT" value="初期化" onclick="InitializeUserData('All')"></div>
+			</li>
+			<li>アップロード履歴を削除し、すべての設定を初期化します。初期化後の復元はできません。</li>
+		</ul>
+		<div style="margin:2em 3em; font-size:12px">
+			設定とアップロード履歴はブラウザ固有のローカルストレージに保存されます。<br>
+			ブラウザでサイトデータを削除すると、設定とアップロード履歴が削除される場合があります。
+		</div>
+		
+		</div>
+		
+	</div>
+
+	<!-- URLBox -->
+	<div id="URLBox">
+		<div id="URLBoxLabel" onclick="ToggleURLBox()">URLBox</div>
+		<div id="URLBoxInner">
+			<textarea id="TextURLBox" onclick="this.select(0,this.value.length)" readonly></textarea>
+			<div>
+				<input type="button" class="PositiveBT" value="URLをコピー" onclick="CopyImageURL(this.parentNode.parentNode, 'textarea')">
+				<input type="button" class="PositiveBT" value="選択をクリア" onclick="(function(){document.getElementById('TextURLBox').value=''; ClickSelectImage('Clear');})();">
+				<input type="button" class="NegativeBT" value="選択画像を削除" onclick="DeleteImage(1)">
+			</div>
+		</div>
+	</div>
+	
+	<!-- Footer -->
+	<footer>
+		<!--##CustomHTML2##-->
+		<div id="FooterInner">
+		jlab-script-plus Version 2.0 beta1
+		</div>
+	</footer>
+
+</body>
+</html>
