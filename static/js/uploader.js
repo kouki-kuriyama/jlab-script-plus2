@@ -38,6 +38,7 @@
 		//プレビューを無効化
 		DisablePreview(){
 			this.PreviewArea.style.display = "none";
+			this.PreviewArea.innerHTML = "";
 			this.UploaderFinishPanel.style.display = "none";
 			this.UploaderStartPanel.style.display = "none";
 			this.UploaderSelectPanel.style.display = "block";
