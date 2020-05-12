@@ -3,7 +3,7 @@
 	
 	/*
 		deletion.php
-		Version2.0 beta1 - jsp2 (jlab-script-plus Ver2.0)
+		jlab-script-plus 2.0 beta2
 	*/
 	
 	

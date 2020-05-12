@@ -1,8 +1,8 @@
 	
 	
 	/*
-		usercontrol.js - Ver2.0a
-		jsp2 (jlab-script-plus Ver2.0)
+		user-control.js
+		jlab-script-plus 2.0 beta2
 	*/
 	
 	

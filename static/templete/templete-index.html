@@ -24,8 +24,8 @@
 		
 		//各変数の初期化
 		var UploaderStatus = { URLBox:false, OpenTab:"ImageList", DragDrop:false, Processing:false, Ready:false, UploadedPath:[] };
-		var RawBinaryImages = { Files:[], Counts:0, Analyzing:0 };
-		var BinaryImages = { Files:[], Base64:[], MIMEType:[], Counts:0, BoxID:0, PreviewIDs:[] };
+		var RawBinaryImages = { Files:[], Counts:0 };
+		var BinaryImages = { Blob:[], FileSize:[], MIMEType:[] };
 		
 		//設定タブの表示変更
 		window.onload = function(){
@@ -51,23 +51,26 @@
 	
 </head>
 <body id="ContentsTop" ondragover="onFileOver(event)" ondrop="onFileDrop(event)">
-
+	
 	<!-- Header -->
 	<header>
 		<h1><!--##UploaderTitle##--></h1>
 	</header>
-
+	
+	<!-- Curtain -->
+	<div id="UploaderCurtain"></div>
+	
 	<!-- UploaderPanel -->
 	<div id="UploaderMessageArea">アップロードする画像を<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください</div>
 	<div id="Uploader">
 		<div id="UploaderControl">
-			<span id="PreviewAreaMessage" style="font-size:12px; color:#bbb">
-			画像は選択されていません<br>
-			1枚<!--##LimitSize##-->MBまでのJPG, GIF, PNG形式に対応 | 同時アップロード<!--##LimitCount##-->枚まで<br>
-			URL: <!--##ImageURL##--><!--##FileBaseName##-->+number.ext | 画像保存期間: <!--##SaveDays##-->日間 | Admin: <!--##Admin##-->
-			</span>
 			<div id="PreviewAreaBox">
 				<div id="PreviewAreaCover" style="display:none"></div>
+				<span id="PreviewAreaMessage" style="font-size:12px; color:#bbb">
+				画像は選択されていません<br>
+				1枚<!--##LimitSize##-->MBまでのJPG, GIF, PNG形式に対応 | 同時アップロード<!--##LimitCount##-->枚まで<br>
+				URL: <!--##ImageURL##--><!--##FileBaseName##-->+number.ext | 画像保存期間: <!--##SaveDays##-->日間 | Admin: <!--##Admin##-->
+				</span>
 				<div id="PreviewArea" style="display:none"></div>
 			</div>
 			<div id="UploaderControlPanel">
@@ -217,7 +220,7 @@
 	<footer>
 		<!--##CustomHTML2##-->
 		<div id="FooterInner">
-		jlab-script-plus Version 2.0 beta1
+		<a href="https://github.com/kouki-kuriyama/jlab-script-plus2" target="_blank">jlab-script-plus 2.0 beta2</a>
 		</div>
 	</footer>
 

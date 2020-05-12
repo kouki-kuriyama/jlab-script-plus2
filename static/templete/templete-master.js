@@ -1,7 +1,7 @@
 
 	/*
-		master.js - Ver2.0 beta1
-		jsp2 (jlab-script-plus Ver2.0)
+		master.js
+		jlab-script-plus 2.0 beta2
 	*/
 
 	//マスター設定

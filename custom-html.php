@@ -3,7 +3,7 @@
 	/*
 		
 		custom-html.php
-		Version2.0 beta1 - jsp2 (jlab-script-plus Ver2.0)
+		jlab-script-plus 2.0 beta2
 		
 		index.html に設定するカスタムHTML用のファイルです。ろだ毎のメニュー作成や追記事項記入にお使いください。
 		HTML・CSS・Javascriptを記入することができます。

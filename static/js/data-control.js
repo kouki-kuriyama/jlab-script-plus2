@@ -1,8 +1,8 @@
 	
 	
 	/*
-		data-control.js - Ver2.0a
-		 jsp2 (jlab-script-plus Ver2.0)
+		data-control.js
+		jlab-script-plus 2.0 beta2
 	*/
 	
 	//追加のグローバル変数

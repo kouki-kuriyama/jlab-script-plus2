@@ -3,7 +3,7 @@
 	
 	/*
 		imagelist.php
-		Version2.0 beta1 - jsp2 (jlab-script-plus Ver2.0)
+		jlab-script-plus 2.0 beta2
 	*/
 	
 	
@@ -74,7 +74,7 @@
 	$CurrentPageBoxCount = floor($CurrentPage/100);
 	$PageBoxCount = floor($PageCount/100);
 	
-	//現在のページボックスが1〜100の場合
+	//現在のページボックスが1?100の場合
 	//かつ表示枚数*100枚以下の画像を保持している場合
 	if(( $CurrentPageBoxCount < 1 )&&( $ImageCount < $PageDisplayedCount*100 )){
 		$PrevBoxLink = false;
@@ -84,7 +84,7 @@
 	}
 	
 	
-	//現在のページボックスが1〜100の場合
+	//現在のページボックスが1?100の場合
 	//かつ表示枚数*100枚以上の画像を保持している場合
 	else if(( $CurrentPageBoxCount < 1 )&&( $PageDisplayedCount*100 <= $ImageCount )){
 		$PrevBoxLink = false;
@@ -93,7 +93,7 @@
 		$MaxLink = 100;
 	}
 	
-	//現在のページボックスが101〜の場合
+	//現在のページボックスが101?の場合
 	else{
 		if( $CurrentPageBoxCount == 1 ){
 			$PrevBoxLink = 1;

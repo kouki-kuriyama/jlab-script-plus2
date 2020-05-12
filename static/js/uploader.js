@@ -1,13 +1,74 @@
 	
 	
 	/*
-		uploader.js - Ver2.0a
-		 jsp2 (jlab-script-plus Ver2.0)
+		uploader.js
+		jlab-script-plus 2.0
 	*/
 	
 	
 	//--- ---//
 	
+	//アップローダーDOMをコントロールする
+	class DOMControler {
+		
+		//DOMの取得
+		constructor(){
+			this.MessageText = "";
+			this.UploaderMessage = document.getElementById("UploaderMessageArea");
+			this.PreviewArea = document.getElementById("PreviewArea");
+			this.PreviewAreaMessage = document.getElementById("PreviewAreaMessage");
+			this.UploadedURLBox = document.getElementById("UploadedURLBox");
+			this.UploaderFinishButton = document.getElementById("UploaderFinishButton");
+			this.UploaderFinishPanel = document.getElementById("UploaderFinishPanel");
+			this.UploaderStartPanel = document.getElementById("UploaderStartPanel");
+			this.UploaderSelectPanel = document.getElementById("UploaderSelectPanel");
+		}
+		
+		//メッセージテキストを変更
+		UpdateMessageText(){
+			this.UploaderMessage.innerHTML = this.MessageText;
+		}
+		
+		//プレビューを有効化
+		EnablePreview(){
+			this.PreviewArea.style.display = "block";
+			this.PreviewAreaMessage.style.display = "none";
+		}
+		
+		//プレビューを無効化
+		DisablePreview(){
+			this.PreviewArea.style.display = "none";
+			this.UploaderFinishPanel.style.display = "none";
+			this.UploaderStartPanel.style.display = "none";
+			this.UploaderSelectPanel.style.display = "block";
+			this.PreviewAreaMessage.style.display = "inline";
+		}
+		
+		//アップロードボタンを有効化
+		EnableUploadButton(){
+			this.UploaderStartPanel.style.display = "block";
+		}
+		
+		//アップロード中
+		Uploading(){
+			this.UploaderSelectPanel.style.display = "none";
+			this.UploaderStartPanel.style.display = "none";
+			this.UploadedURLBox.style.display = "none";
+		}
+		
+		//画像URLフラッシュ開始
+		FlushingURL(){
+			this.UploaderFinishPanel.style.display = "block";
+			this.UploaderFinishButton.style.display = "none";
+			this.UploadedURLBox.style.display = "block";
+		}
+		
+		//アップロード完了
+		FinishUpload(){
+			this.UploaderFinishButton.style.display = "block";
+		}
+	
+	}
 	
 	//ファイルをドラッグ中
 	function onFileOver(e){
@@ -29,11 +90,12 @@
 			return;
 		}
 		
+		//取り込み画像を初期化
+		RawBinaryImages.Files = [];
 		RawBinaryImages.Counts = e.dataTransfer.files.length;
-		RawBinaryImages.Analyzing = 0;
 		
 		//Windows向け(画像の並べ替え)
-		for( var di=0; di < RawBinaryImages.Counts; di++ ){
+		for( let di=0; di < e.dataTransfer.files.length; di++ ){
 			RawBinaryImages.Files[di] = e.dataTransfer.files[di];
 		}
 		RawBinaryImages.Files.sort(function(a, b){
@@ -43,7 +105,7 @@
 		});
 		
 		UploaderStatus.DragDrop = true;
-		FileLoad();
+		FileAnalyzer();
 		
 		return;
 	}
@@ -63,178 +125,204 @@
 			return;
 		}
 		
-		RawBinaryImages.Files = document.getElementById("SelectFiles").files;
+		//取り込み画像を初期化
+		RawBinaryImages.Files = [];
 		RawBinaryImages.Counts = document.getElementById("SelectFiles").files.length;
-		RawBinaryImages.Analyzing = 0;
+		for( let di=0; di < document.getElementById("SelectFiles").files.length; di++ ){
+			RawBinaryImages.Files[di] = document.getElementById("SelectFiles").files[di];
+		}
 		
 		UploaderStatus.DragDrop = false;
-		FileLoad();
+		FileAnalyzer();
 		
 		return;
 	}
 	
 	//--- ---//
-	
+
+
 	//取り込まれた画像の処理
-	function FileLoad(Optns){
-		
-		if( Optns ){
-			RawBinaryImages.Analyzing = RawBinaryImages.Analyzing + 1;
-		}
-		
-		var AzBinaryImage = RawBinaryImages.Files[RawBinaryImages.Analyzing];
-		if( !AzBinaryImage ){
-			if( BinaryImages.Counts > 0 ){
-				document.getElementById("UploaderControlPanel").style.display = "block";
-				document.getElementById("UploaderMessageArea").innerHTML = "<strong>一部エラーが発生しました</strong><br><span style=\"font-size:12px\">サムネイルが表示されている画像のみアップロード準備完了</span>";
-				document.getElementById("UploaderStartPanel").style.display = "block";
-			}else{
-				ClearUploader();
-			}
-			return;
-		}
-		
-		document.getElementById("UploaderControlPanel").style.display = "none";
-		document.getElementById("UploaderMessageArea").innerHTML = "" + (RawBinaryImages.Analyzing+1) + "枚目を取り込み中";
-		
-		if( BinaryImages.Counts >= MasterSettings.LimitCount ){
+	function FileAnalyzer(){
+
+		//DOMを初期化
+		let DOMControl = new DOMControler();
+
+		//同時アップロード枚数の確認
+		if(( RawBinaryImages.Counts > MasterSettings.LimitCount )||( BinaryImages.Blob.length+RawBinaryImages.Counts > MasterSettings.LimitCount )){
 			alert("同時アップロード枚数の制限を超えています");
-			document.getElementById("UploaderControlPanel").style.display = "block";
-			document.getElementById("UploaderMessageArea").innerHTML = "<strong>同時アップロード制限エラー</strong><br><span style=\"font-size:12px\">サムネイルが表示されている画像のみアップロード準備完了</span>";
-			document.getElementById("UploaderStartPanel").style.display = "block";
 			return;
 		}
-		
-		if( AzBinaryImage.size > MasterSettings.LimitSizeByte ){
-			alert(AzBinaryImage.name + " : "+ MasterSettings.LimitSize + "MB以上のファイルはアップロードできません");
-			FileLoad(true);
-			return;
-		}
-		
-		if( !AzBinaryImage.type.match(/image\/jpeg/) && !AzBinaryImage.type.match(/image\/png/) && !AzBinaryImage.type.match(/image\/gif/)){
-			alert(AzBinaryImage.name + "はアップロードできる形式ではありません");
-			FileLoad(true);
-			return;
-		}else{
-			BinaryImages.MIMEType[BinaryImages.Counts] = AzBinaryImage.type;
-		}
-		
-		if( BinaryImages.Counts >= 1 ){
-			for( var SizeCheck=0; SizeCheck < BinaryImages.Counts; SizeCheck++ ){
-				if( BinaryImages.Base64[SizeCheck] == undefined ){
-					continue;
-				}
-				if( AzBinaryImage.size == BinaryImages.Files[SizeCheck].size ){
-					alert("同時に同じ画像はアップロードできません");
-					FileLoad(true);
-					return;
-				}
+
+		//ファイル形式チェック
+		for(let BinaryNum in RawBinaryImages.Files ){
+			DOMControl.MessageText = "ファイル形式をチェック中…";
+			DOMControl.UpdateMessageText();
+			if( !RawBinaryImages.Files[BinaryNum].type.match(/image\/jpeg/) && !RawBinaryImages.Files[BinaryNum].type.match(/image\/png/) && !RawBinaryImages.Files[BinaryNum].type.match(/image\/gif/)){
+				alert(RawBinaryImages.Files[BinaryNum].name + "はアップロードできる形式ではありません");
+				RawBinaryImages.Files[BinaryNum] = false;
 			}
 		}
 		
-		var PhotoReader = new FileReader();
-		
-		var PreviewImgTag = document.createElement("img");
-		var CancelLink = document.createElement("a");
-		CancelLink.href = "javascript:ImageCancel(" + BinaryImages.BoxID + ")";
-		CancelLink.title = "この画像を取り消しますか？ 取り消す場合には画像をクリックします。";
-		CancelLink.id = "PreviewImg" + BinaryImages.BoxID;
-		
-		//Base64を取得する
-		PhotoReader.onload = function(){
+		for(let BinaryNum in RawBinaryImages.Files ){
+
+			//前段階でキャンセルされているものは弾く
+			if(RawBinaryImages.Files[BinaryNum] == false){
+				continue;
+			}
 			
-			var TmpImgBinary = PhotoReader.result.split(",");
-			BinaryImages.Files[BinaryImages.BoxID] = AzBinaryImage;
-			BinaryImages.Base64[BinaryImages.BoxID] = TmpImgBinary[1];
-			
-			var TempBlobURL = URL.createObjectURL(new Blob([AzBinaryImage], { type: AzBinaryImage.type }));
-			
-			document.getElementById("PreviewAreaBox").style.display = "block";
-			document.getElementById("PreviewArea").style.display = "block";
-			document.getElementById("PreviewAreaMessage").style.display = "none";
-			
-			PreviewImgTag.src = TempBlobURL;
-			CancelLink.appendChild(PreviewImgTag);
-			document.getElementById("PreviewArea").appendChild(CancelLink);
-			
-			BinaryImages.PreviewIDs[BinaryImages.Counts] = "PreviewImg" + BinaryImages.BoxID;
-			
-			BinaryImages.Counts = BinaryImages.Counts + 1;
-			BinaryImages.BoxID = BinaryImages.BoxID + 1;
-			RawBinaryImages.Analyzing = RawBinaryImages.Analyzing + 1;
-			
-			if( RawBinaryImages.Analyzing < RawBinaryImages.Counts ){
-				FileLoad();
+			//ファイルサイズチェック
+			DOMControl.MessageText = "ファイルサイズをチェック中…";
+			DOMControl.UpdateMessageText();
+			if( RawBinaryImages.Files[BinaryNum].size > MasterSettings.LimitSizeByte ){
+				alert(RawBinaryImages.Files[BinaryNum].name + " : "+ MasterSettings.LimitSize + "MB以上のファイルはアップロードできません");
+				RawBinaryImages.Files[BinaryNum] = false;
 			}else{
-				document.getElementById("UploaderMessageArea").innerHTML = "<strong>アップロード準備完了</strong><br><span style=\"font-size:12px\">プレビュー画像をクリックすると取り消しができます<br>画像を追加するには<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください</span>";
+				
+				//ファイル同一性チェック
+				if( BinaryImages.FileSize.indexOf(RawBinaryImages.Files[BinaryNum].size) != -1 ){
+					alert("同一のファイルはアップロードできません");
+					RawBinaryImages.Files[BinaryNum] = false;
+				}else{
+					BinaryImages.FileSize.push(RawBinaryImages.Files[BinaryNum].size);
+				}
+			}
+		}
+
+		//キャンセルされた画像を省いて配列とカウント数をクリーンアップする
+		RawBinaryImages.Files = RawBinaryImages.Files.filter(v => v);
+		RawBinaryImages.Counts = RawBinaryImages.Files.length;
+
+		//ファイルが存在しなくなったら処理を終了する
+		if( RawBinaryImages.Counts < 1 ){
+			if( UploaderStatus.Ready ){
+				DOMControl.MessageText = "<strong>アップロード準備完了</strong><br><span style=\"font-size:12px\">プレビュー画像をクリックすると取り消しができます<br>画像を追加するには<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください</span>";
+				DOMControl.EnableUploadButton();
+				DOMControl.UpdateMessageText();
+			}else{
+				DOMControl.MessageText = "アップロードする画像を<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください";
+				DOMControl.DisablePreview();
+				DOMControl.UpdateMessageText();
+			}
+			return;
+		}
+
+		FileLoader(0);
+		return;
+	}
+
+	//解析された画像を読み込む
+	function FileLoader(LoadNum){
+
+		//FileAPIとDOMの初期化
+		let ImageReader = new FileReader();
+		let DOMControl = new DOMControler();
+
+		//Blob読み込み・プレビュー表示
+		function getBlobData(){
+			
+			//プレビュー用のBlobURLを取得
+			let getBlob = new Blob([new Uint8Array(ImageReader.result)], { type: RawBinaryImages.Files[LoadNum].type });
+			let LoadedBlobURL = URL.createObjectURL(getBlob);
+
+			//Blob形式で送信準備をする
+			BinaryImages.Blob.push(getBlob);
+			BinaryImages.MIMEType.push(RawBinaryImages.Files[LoadNum].type);
+			
+			//プレビューエリアをオープン
+			DOMControl.EnablePreview();
+			
+			//プレビュー用HTMLを作成
+			let PreviewImageTag = document.createElement("img");
+			PreviewImageTag.src = LoadedBlobURL;
+			PreviewImageTag.title = "この画像を取り消しますか？ 取り消す場合には画像をクリックします。";
+			document.getElementById("PreviewArea").appendChild(PreviewImageTag);
+			
+			//1枚分の取り込みを完了
+			LoadNum++;
+			
+			//画像の取り込みを継続する
+			if( LoadNum < RawBinaryImages.Counts ){
+				FileLoader(LoadNum);
+			}else{
 				if(( UserSettings.FastUpload == "Enable" )&&( MasterSettings.FastUpload )){
 					UploaderStatus.Ready = true;
 					StartUpload();
 					return;
 				}
-				document.getElementById("UploaderControlPanel").style.display = "block";
-				document.getElementById("UploaderStartPanel").style.display = "block";
+				DOMControl.MessageText = "<strong>アップロード準備完了</strong><br><span style=\"font-size:12px\">プレビュー画像をクリックすると取り消しができます<br>画像を追加するには<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください</span>";
+				DOMControl.EnableUploadButton();
+				DOMControl.UpdateMessageText();
 			}
-			
+
 			UploaderStatus.Ready = true;
 			PageScroll("ContentsTop");
 			document.title = "アップロード準備完了 - " + MasterSettings.Title;
-			
-		};
+
+		}
 		
-		PhotoReader.readAsDataURL(AzBinaryImage);
-	
+		//画像を取り込む
+		DOMControl.MessageText = LoadNum+1 + "枚目を取り込み中…";
+		DOMControl.UpdateMessageText();
+		ImageReader.addEventListener("load", getBlobData, false);
+		ImageReader.readAsArrayBuffer(RawBinaryImages.Files[LoadNum]);
+		
+		return;
 	}
+	
 	
 	//--- ---//
 	
+	
 	//アップロードを開始する
 	function StartUpload(){
-	
+		
+		//DOMの初期化
+		let DOMControl = new DOMControler();
+		
 		if( !UploaderStatus.Ready ){
 			alert("アップロードする画像を選択してください");
 			return;
 		}
 		
-		document.getElementById("UploaderMessageArea").innerHTML = "待機中…";
+		DOMControl.MessageText = "待機中…";
+		DOMControl.UpdateMessageText();
 		UploaderStatus.Processing = true;
 		
 		DeleteKey = document.getElementById("DeleteKey").value;
 		if(( UserSettings.FastUpload == "Enable" )&&( !DeleteKey )){
 			alert("FastUploadを有効にするには削除キーを設定してください");
-			document.getElementById("UploaderMessageArea").innerHTML = "<strong>FastUploadエラー</strong><br><span style=\"font-size:12px\">アップロードボタンを押してアップロードを開始してください</span>";
+			DOMControl.MessageText = "<strong>FastUploadエラー</strong><br><span style=\"font-size:12px\">アップロードボタンを押してアップロードを開始してください</span>";
+			DOMControl.EnableUploadButton();
+			DOMControl.UpdateMessageText();
 			UploaderStatus.Processing = false;
 			return;
 		}
 		
 		document.getElementById("PreviewAreaCover").style.display = "block";
-		document.getElementById("UploaderControlPanel").style.display = "none";
-		document.getElementById("UploaderStartPanel").style.display = "none";
-		document.getElementById("UploaderSelectPanel").style.display = "none";
+		DOMControl.Uploading();
 		
-		var UploadedCount = 0;
-		var UploadingCount = 0;
+		let UploadedCount = 0;
+		let UploadingCount = 0;
 		
 		//アップロード用関数
-		GoUpload = function(){
+		function GoUpload(){
 		
 			//タイトルを変更
-			document.title = (UploadedCount+1) + "/" + BinaryImages.Counts + " アップロード中 - " + MasterSettings.Title;
-			document.getElementById("UploaderMessageArea").innerHTML = (UploadedCount+1) + "枚目をアップロード中…";
+			document.title = (UploadedCount+1) + "/" + BinaryImages.Blob.length + " アップロード中 - " + MasterSettings.Title;
+			DOMControl.MessageText = (UploadedCount+1) + "枚目をアップロード中…";
+			DOMControl.UpdateMessageText();
 			
-			//キャンセルされた画像はスキップする
-			if( BinaryImages.Base64[UploadingCount] == "Canceled" ){
-				UploadingCount++;
-				GoUpload();
-				return;
-			}
+			//アップロードデータを作成
+			let UploadData = new FormData();
+			UploadData.append("Image", BinaryImages.Blob[UploadingCount]);
+			UploadData.append("MIMEType", BinaryImages.MIMEType[UploadingCount]);
+			UploadData.append("DeleteKey", DeleteKey);
 			
 			//Ajax送信
 			xmlRequest.open("POST","./application/uploader.php",true);
 			xmlRequest.onreadystatechange = ResultFlush;
-			xmlRequest.setRequestHeader("content-type","application/x-www-form-urlencoded;charset=UTF-8");
-			xmlRequest.send("Image=" + BinaryImages.Base64[UploadingCount] + "&MIMEType=" + encodeURIComponent(BinaryImages.MIMEType[UploadingCount]) + "&DeleteKey=" + DeleteKey + "");
-	
+			xmlRequest.send(UploadData);
+			
 		}
 		
 		GoUpload();
@@ -250,7 +338,8 @@
 				//アップロードエラー時の処理
 				if( UploadResponse == "400" || UploadResponse == "403" || !UploadResponse ){
 				
-					document.getElementById("UploaderMessageArea").innerHTML = "エラーが発生した為、アップロードを停止しました";
+					DOMControl.MessageText = "エラーが発生した為、アップロードを停止しました";
+					DOMControl.UpdateMessageText();
 					document.title = "アップロード失敗 - " + MasterSettings.Title;
 					xmlRequest.abort();
 					
@@ -262,47 +351,46 @@
 							alert("この画像はアップロードできません");
 						break;
 						default:
-							alert("不明なエラーが発生しました\nページを更新して再度お試しください");
+							alert("不明なエラーが発生しました\nページを更新して再度お試しください\nアップローダーレスポンス：" + UploadResponse + "");
 						break;
 					}
 					
 					return;
 				}
 				
+				//1枚目のアップロード終了時
+				if( UploadedCount == 0 ){
+					DOMControl.FlushingURL();
+					document.getElementById("UploadedURLBox").value = MasterSettings.ImageURL + UploadResponse;
+				}
+				
+				//2枚目以降のアップロード終了時
+				else if( UploadedCount < BinaryImages.Blob.length ){
+					let EndedUploadResponse = document.getElementById("UploadedURLBox").value;
+					document.getElementById("UploadedURLBox").value = EndedUploadResponse + "\n" + MasterSettings.ImageURL + UploadResponse;
+				}
+				
 				//アップロードカウントを増やす
 				UploadingCount = UploadingCount+1;
 				UploadedCount = UploadedCount+1;
 				
-				//1枚目のアップロード終了時
-				if( UploadedCount == 1 ){
-					document.getElementById("UploadedURLBox").style.display = "block";
-					document.getElementById("UploaderFinishPanel").style.display = "block";
-					document.getElementById("UploaderControlPanel").style.display = "block";
-					document.getElementById("UploadedURLBox").value = MasterSettings.ImageURL + UploadResponse;
-					document.getElementById(BinaryImages.PreviewIDs[UploadingCount-1]).innerHTML = "";
-				}
-				
-				//2枚目以降のアップロード終了時
-				else if( UploadedCount <= BinaryImages.Counts ){
-					var EndedUploadResponse = document.getElementById("UploadedURLBox").value;
-					document.getElementById("UploadedURLBox").value = EndedUploadResponse + "\n" + MasterSettings.ImageURL + UploadResponse;
-					document.getElementById(BinaryImages.PreviewIDs[UploadingCount-1]).innerHTML = "";
-				}
-				
+				//アップロード済みの画像プレビューを削除する
+				let RemovePreviewNode = document.getElementById("PreviewArea").firstElementChild;
+				document.getElementById("PreviewArea").removeChild(RemovePreviewNode)
+
 				UploaderStatus.UploadedPath[UploadedCount-1] = UploadResponse;
 				
 				//アップロードに続きがある場合の処理
-				if( UploadedCount < BinaryImages.Counts ){
+				if( UploadedCount < BinaryImages.Blob.length ){
 					GoUpload();
 				}
 				
 				//アップロード終了時の表示
 				else{
 					
-					document.getElementById("UploaderFinishButton").style.display = "block";
-					document.getElementById("PreviewArea").innerHTML = ""
-					document.getElementById("PreviewAreaBox").style.display = "none";
-					document.getElementById("UploaderMessageArea").innerHTML = "アップロードが完了しました";
+					DOMControl.MessageText = "アップロードが完了しました";
+					DOMControl.FinishUpload();
+					DOMControl.UpdateMessageText();
 					document.title = "アップロード完了 - " + MasterSettings.Title;
 					
 					//削除キーが変わっている場合は新しい削除キーをオブジェクトに代入する
@@ -335,23 +423,33 @@
 	}
 	
 	//キャンセル
-	function ImageCancel(CancelNumber){
-	
-		if( window.confirm("画像を取り消しますか？")){
+	function ImageCancel(e){
 		
+  		let PreviewImageNodes = e.target.parentNode.querySelectorAll("img");
+  		let PreviewNodeNum = Array.prototype.indexOf.call(PreviewImageNodes, e.target);
+		
+		if( PreviewNodeNum < 0 ){
+			return;
+		}
+		
+		if( window.confirm("画像を取り消しますか？")){
+			
 			//オブジェクトから削除
-			BinaryImages.Files[CancelNumber] = "Canceled";
-			BinaryImages.Base64[CancelNumber] = "Canceled";
-			BinaryImages.MIMEType[CancelNumber] = "Canceled";
-			BinaryImages.Counts = BinaryImages.Counts - 1;
+			BinaryImages.Blob[PreviewNodeNum] = false;
+			BinaryImages.FileSize[PreviewNodeNum] = false;
+			BinaryImages.MIMEType[PreviewNodeNum] = false;
+			BinaryImages.Blob = BinaryImages.Blob.filter(v => v);
+			BinaryImages.FileSize = BinaryImages.FileSize.filter(v => v);
+			BinaryImages.MIMEType = BinaryImages.MIMEType.filter(v => v);
 			
 			//プレビュー表示を削除
-			document.getElementById("PreviewImg" + CancelNumber).innerHTML = "";
+			e.target.parentNode.removeChild(e.target);
 			
 			//最後の1枚も削除した場合は初期化する
-			if( BinaryImages.Counts == 0 ){
+			if( BinaryImages.Blob.length == 0 ){
 				ClearUploader();
 			}
+			
 		}
 		
 		return;
@@ -359,7 +457,7 @@
 	
 	//表示と変数・オブジェクトを初期化する
 	function ClearUploader(ForceConfirm){
-	
+		
 		//確認ウィンドウを表示するか
 		if( ForceConfirm ){
 			if( !window.confirm("画像を取り消しますか？")){
@@ -367,37 +465,25 @@
 			}
 		}
 		
+		//DOM初期化
+		let DOMControl = new DOMControler();
+		
 		//変数・オブジェクト初期化
 		UploaderStatus.DragDrop = false;
 		UploaderStatus.Processing = false;
 		UploaderStatus.Ready = false;
 		UploaderStatus.UploadedPath = [];
-		RawBinaryImages = { Files:[], Counts:0, Analyzing:0 };
-		BinaryImages = { Files:[], Base64:[], MIMEType:[], Counts:0, BoxID:0, PreviewIDs:[] };
+		RawBinaryImages = { Files:[], Counts:0 };
+		BinaryImages = { Blob:[], FileSize:[], MIMEType:[] };
 		UploadedCount = 0;
-		
 		
 		//表示初期化
 		document.title = MasterSettings.Title;
 		
-		//アップローダーメッセージを初期化
-		document.getElementById("PreviewAreaMessage").style.display = "inline";
-		document.getElementById("UploaderMessageArea").innerHTML = "アップロードする画像を<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください";
-
 		//プレビューを非表示
-		document.getElementById("PreviewAreaCover").style.display = "none";
-		document.getElementById("PreviewAreaBox").style.display = "none";
-		document.getElementById("PreviewArea").innerHTML = "";
-		
-		//選択ボタンを表示 # アップロードボタンと完了ボタンを非表示
-		document.getElementById("UploaderSelectPanel").style.display = "block";
-		document.getElementById("UploaderStartPanel").style.display = "none";
-		document.getElementById("UploaderFinishButton").style.display = "none";
-		
-		//アップロードURLBoxを非表示
-		document.getElementById("UploadedURLBox").innerHTML = "";
-		document.getElementById("UploadedURLBox").style.display = "none";
-		
+		DOMControl.MessageText = "アップロードする画像を<strong>ドラッグアンドドロップ</strong>するか<strong>選択</strong>してください";
+		DOMControl.DisablePreview();
+		DOMControl.UpdateMessageText();
 		
 		return;
 	

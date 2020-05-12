@@ -24,12 +24,12 @@
 	flock( $LockFileOpen,LOCK_EX );
 	
 	//送信されたデータを取得する
-	$SourceImage = $_POST["Image"];
-	$MIMEType = urldecode($_POST["MIMEType"]);
+	$Image = $_FILES["Image"]["tmp_name"];
+	$MIMEType = $_POST["MIMEType"];
 	$DeleteKey = $_POST["DeleteKey"];
 	
 	//送信されたデータが正しくない場合はエラーを返す
-	if(( $SourceImage == "" )||( $MIMEType == "" )){
+	if(( $Image == "" )||( $MIMEType == "" )){
 		echo "400";
 		fclose($LockFileOpen);
 		exit;
@@ -69,7 +69,7 @@
 	
 	//画像のサイズを確認する
 	//上限を超えている場合はForbiddenを返す
-	if( strlen($SourceImage) > ($LimitSize*1024*1024*1.33) ){
+	if( filesize($Image) > ($LimitSize*1024*1024) ){
 		echo "403";
 		fclose($LockFileOpen);
 		exit;
@@ -84,9 +84,6 @@
 	}
 	$UploadTime = date("y/m/d H:i:s");
 	
-	//画像をBase64形式からバイナリ形式に変換する
-	$Image = base64_decode(str_replace(" ","+",$SourceImage));
-	
 	//同じファイル名がないか確認する（存在した場合は再度時間を取得し付け直す）
 	if( file_exists("../{$LogFolder}/{$FileName}.json") ){
 		sleep(1);
@@ -94,7 +91,7 @@
 		$UploadTime = date("y/m/d H:i:s");
 	}
 	$ImagePath = "../{$SaveFolder}/".$FileName.$ExtensionID;
-	file_put_contents($ImagePath,$Image);
+	move_uploaded_file($Image, $ImagePath);
 	
 	//画像サイズとファイルサイズを取得
 	list($ImageWidth,$ImageHeight,$MType,$Attr) = getimagesize($ImagePath);

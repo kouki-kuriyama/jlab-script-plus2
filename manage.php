@@ -3,11 +3,11 @@
 	/*
 	
 	manage.php
-	Version2.0 beta1 - jsp2 (jlab-script-plus Ver2.0)
+	jlab-script-plus 2.0 beta2
 	
 	☆アップローダーの設定ファイルです。
 	　アップローダーの動作に必要な設定内容ですので、各環境に合った設定に変更してください。
-	　数値はそのまま記入、数値以外の文字列はクォート（'〜'）の中に記入してください。 ←人の顔に見える
+	　数値はそのまま記入、数値以外の文字列はクォート（'?'）の中に記入してください。 ←人の顔に見える
 	　★（黒星）の項目は、高度な設定でデフォルトが推奨値です。特に理由が無い場合はデフォルトでの運用をオススメします。
 	
 	/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#/#
@@ -25,7 +25,7 @@
 	
 	//☆管理者名
 	//　index.htmlに管理者名として表示されます
-	$Admin = '管理者◆TripKeys10';
+	$Admin = '管理者名';
 	
 	//☆画像保存フォルダ(最後の / は不要です)
 	$SaveFolder = 's';
@@ -36,17 +36,17 @@
 	//☆ログファイル保存フォルダ(最後の / は不要です)
 	$LogFolder = 'd';
 
-	//☆アップローダーのURL(http:// 若しくは https://から)
+	//☆アップローダーのURL(http:// もしくは https://から)
 	//　index.html が表示されるURLを指定してください。
-	//　URLはプロトコルから始め、最後に必ず / が入るようにしてください。
-	$FullURL = 'https://base.snpht.org/jsp2/';
+	//　URLはプロトコルから始め、最後に必ず /(スラッシュ) で終わるように設定してください。
+	$FullURL = 'http://dev.snpht.org/jsp-dev/';
 
 	//☆ファイル名接頭語(不要な場合は空欄にしてください)
 	//　アップローダー稼働後に接頭語を変更すると、表示や自動削除などに不具合が生じる場合があるのでご注意ください。
-	$FileBaseName = 'test';
+	$FileBaseName = '';
 
 	//☆アップローダーのタイトル
-	$UploaderTitle = '実況ろだTEST';
+	$UploaderTitle = '実況ろだ';
 
 	//☆画像の保存日数(Day(s))
 	$SaveDay = 5;
@@ -67,7 +67,7 @@
 	
 	//☆詳細ファイル名を使用する
 	//　1秒に1枚以上の画像を受け付ける場合は true に設定します。
-	//　ファイル名と拡張子の間にマイクロ秒が追加されます。（ファイル名が4〜5桁ほど長くなります）
+	//　ファイル名と拡張子の間にマイクロ秒が追加されます。（ファイル名が4?5桁ほど長くなります）
 	$MicroSec = true;
 	
 	//☆FastUploadの許可
@@ -135,23 +135,29 @@
 			
 			if( !is_dir("./{$StaticDataFolder}/") ){
 				echo "［！］static フォルダが存在しません。\n";
+				echo "　　　static フォルダはGitHubリポジトリ内に同梱されているものをそのまま設置してください。\n";
 				exit;
 			}
 		
 			if( !is_dir("./{$SaveFolder}/") ){
 				echo "［！］{$SaveFolder} フォルダが存在しません。\n";
+				echo "　　　{$SaveFolder} フォルダを新しく作成するか、アップロードしてください。\n";
 				exit;
 			}
 			
 			if( !is_dir("./{$ThumbSaveFolder}/") ){
 				echo "［！］{$ThumbSaveFolder} フォルダが存在しません。\n";
+				echo "　　　{$ThumbSaveFolder} フォルダを新しく作成するか、アップロードしてください。\n";
 				exit;
 			}
 			
 			if( !is_dir("./{$LogFolder}/") ){
 				echo "［！］{$LogFolder} フォルダが存在しません。\n";
+				echo "　　　{$LogFolder} フォルダを新しく作成するか、アップロードしてください。\n";
 				exit;
 			}
+			
+			//-----//
 			
 			if( !touch("./{$SaveFolder}/image-folder") ){
 				echo "［！］{$SaveFolder} フォルダへ書き込みができません。\n";
